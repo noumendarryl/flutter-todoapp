@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:todo_list/views/add_todo_form.dart';
+import 'package:todo_list/views/add_todo.dart';
 import 'package:todo_list/views/done_todo.dart';
 import 'package:todo_list/views/edit_todo.dart';
 import 'package:todo_list/views/view_todo.dart';
@@ -68,7 +68,7 @@ class _HomePageState extends State<HomePage> {
         {
           "title": "Plan my holiday trip",
           "description":
-              "- Choose a nice destination \n- Check on a good place to stay \n- Buy an airplane ticket",
+              "- Choose a nice destination \n- Check for a good place to stay \n- Buy an airplane ticket",
           "isCompleted": false,
           "created": _created
         },
@@ -198,18 +198,16 @@ class _HomePageState extends State<HomePage> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => EditTodo(
-                                    title: _todoList[index]['title'],
-                                    description: _todoList[index]
-                                        ['description'],
-                                    onSaved: (String? value) {
-                                      _todoList[index]['title'] = value!;
-                                    },
-                                  )),
+                                  title: _todoList[index]['title'],
+                                  description: _todoList[index]
+                                      ['description'])),
                         );
-                        // print(newTitle + " " + newDescription);
+                        print(newTitle + " " + newDescription);
                         if (newTitle.toString().isNotEmpty) {
                           setState(() {
                             _todoList.elementAt(index)['title'] = newTitle;
+                            _todoList.elementAt(index)['description'] =
+                                newDescription;
                           });
                         }
                         _saveTodos();
