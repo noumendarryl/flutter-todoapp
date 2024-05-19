@@ -18,8 +18,8 @@ class _EditTodoState extends State<EditTodo> {
 
   @override
   Widget build(BuildContext context) {
-    String _title = widget.title;
-    String? _description = widget.description;
+    String title = widget.title;
+    String? description = widget.description;
 
     return Scaffold(
       appBar: AppBar(
@@ -45,7 +45,7 @@ class _EditTodoState extends State<EditTodo> {
                   decoration: const InputDecoration(
                     hintText: "Enter your today's task",
                   ),
-                  initialValue: _title,
+                  initialValue: title,
                   validator: (String? value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter some title';
@@ -54,7 +54,7 @@ class _EditTodoState extends State<EditTodo> {
                   },
                   onSaved: (value) {
                     setState(() {
-                      _title = value!;
+                      title = value!;
                     });
                   },
                 ),
@@ -65,11 +65,11 @@ class _EditTodoState extends State<EditTodo> {
                   decoration: const InputDecoration(
                     hintText: "Write down your description",
                   ),
-                  initialValue: _description,
+                  initialValue: description,
                   maxLines: 5,
                   onSaved: (value) {
                     setState(() {
-                      _description = value!;
+                      description = value!;
                     });
                   },
                 ),
@@ -82,9 +82,8 @@ class _EditTodoState extends State<EditTodo> {
                       if (_formKey.currentState!.validate()) {
                         // Process data
                         _formKey.currentState!.save();
-                        print("Edit page $_title $_description");
                         Navigator.pop(
-                            context, [_title, _description]);
+                            context, [title, description]);
                       }
                     },
                     style: TextButton.styleFrom(
