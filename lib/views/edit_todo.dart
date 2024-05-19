@@ -3,13 +3,11 @@ import 'package:flutter/material.dart';
 class EditTodo extends StatefulWidget {
   final String title;
   final String? description;
-  final ValueChanged<String?> onSaved;
 
   const EditTodo(
       {super.key,
       required this.title,
-      this.description,
-      required this.onSaved});
+      this.description});
 
   @override
   State<EditTodo> createState() => _EditTodoState();
@@ -20,6 +18,9 @@ class _EditTodoState extends State<EditTodo> {
 
   @override
   Widget build(BuildContext context) {
+    String _title = widget.title;
+    String? _description = widget.description;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -44,14 +45,18 @@ class _EditTodoState extends State<EditTodo> {
                   decoration: const InputDecoration(
                     hintText: "Enter your today's task",
                   ),
-                  initialValue: widget.title,
+                  initialValue: _title,
                   validator: (String? value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter some title';
                     }
                     return null;
                   },
-                  onSaved: widget.onSaved,
+                  onSaved: (value) {
+                    setState(() {
+                      _title = value!;
+                    });
+                  },
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 15.0),
@@ -60,9 +65,13 @@ class _EditTodoState extends State<EditTodo> {
                   decoration: const InputDecoration(
                     hintText: "Write down your description",
                   ),
-                  initialValue: widget.description,
+                  initialValue: _description,
                   maxLines: 5,
-                  // onSaved: widget.onSaved,
+                  onSaved: (value) {
+                    setState(() {
+                      _description = value!;
+                    });
+                  },
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 40.0),
@@ -73,8 +82,9 @@ class _EditTodoState extends State<EditTodo> {
                       if (_formKey.currentState!.validate()) {
                         // Process data
                         _formKey.currentState!.save();
+                        print("Edit page $_title $_description");
                         Navigator.pop(
-                            context, [widget.title, widget.description]);
+                            context, [_title, _description]);
                       }
                     },
                     style: TextButton.styleFrom(
