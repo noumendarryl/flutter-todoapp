@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:todo_list/views/add_todo.dart';
-import 'package:todo_list/views/done_todo.dart';
-import 'package:todo_list/views/edit_todo.dart';
 import 'package:todo_list/views/view_todo.dart';
-import 'package:todo_list/widgets/checkbox.dart';
+
+import '../widgets/checkbox.dart';
+
+import 'add_todo.dart';
+import 'done_todo.dart';
+import 'edit_todo.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
