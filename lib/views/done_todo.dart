@@ -17,31 +17,6 @@ class DoneTodo extends StatefulWidget {
 }
 
 class _DoneTodoState extends State<DoneTodo> {
-  @override
-  void initState() {
-    super.initState();
-    print(widget.doneTodoList);
-    _loadDoneTodos();
-  }
-
-  void _init() {
-    setState(() {
-      _saveDoneTodos();
-    });
-  }
-
-  Future<void> _loadDoneTodos() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? doneTodos = prefs.getString('doneTodos');
-    if (doneTodos != null) {
-      setState(() {
-        widget.doneTodoList.addAll(List<Map<String, dynamic>>.from(jsonDecode(doneTodos)));
-      });
-    } else {
-      _init();
-    }
-  }
-
   Future<void> _saveDoneTodos() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {

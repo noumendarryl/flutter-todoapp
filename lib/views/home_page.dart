@@ -79,9 +79,12 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadTodos() async {
     final prefs = await SharedPreferences.getInstance();
     final String? todos = prefs.getString('todos');
-    if (todos != null) {
+    final String? doneTodos = prefs.getString('doneTodos');
+    if (todos != null && doneTodos != null) {
       setState(() {
         _todoList.addAll(List<Map<String, dynamic>>.from(jsonDecode(todos)));
+        _doneTodoList
+            .addAll(List<Map<String, dynamic>>.from(jsonDecode(doneTodos)));
       });
     } else {
       _init();
@@ -92,6 +95,7 @@ class _HomePageState extends State<HomePage> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       prefs.setString("todos", jsonEncode(_todoList));
+      prefs.setString("doneTodos", jsonEncode(_doneTodoList));
     });
   }
 
@@ -202,7 +206,6 @@ class _HomePageState extends State<HomePage> {
                                   description: _todoList[index]
                                       ['description'])),
                         );
-                        print(newTitle + " " + newDescription);
                         if (newTitle.toString().isNotEmpty) {
                           setState(() {
                             _todoList.elementAt(index)['title'] = newTitle;
