@@ -1,10 +1,9 @@
-import 'dart:convert';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_list/views/view_todo.dart';
 
+import '../todo.dart';
 import '../widgets/checkbox.dart';
 
 import 'add_todo.dart';
@@ -19,8 +18,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Map<String, dynamic>> _todoList = [];
-  final List<Map<String, dynamic>> _doneTodoList = [];
+  final FirebaseFirestore database = FirebaseFirestore.instance;
+
+  final List<Todo> _todoList = [];
+  final List<Todo> _doneTodoList = [];
 
   final String _created =
       DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
@@ -28,77 +29,117 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _init();
     _loadTodos();
   }
 
-  void _init() {
-    setState(() {
-      _todoList.addAll([
-        {
-          "title": "Go to the market",
-          "description": "Refill my fridge with new groceries",
-          "isCompleted": false,
-          "created": _created
-        },
-        {
-          "title": "Buy some groceries",
-          "description":
+  void _init() async {
+    final dumpTodos = [
+      Todo(
+          title: "Go to the market",
+          description: "Refill my fridge with new groceries",
+          isCompleted: false,
+          created: _created),
+      Todo(
+          title: "Buy some groceries",
+          description:
               "- Fruits \n- Vegetables \n- Irish Potatoes \n- Tomatoes",
-          "isCompleted": false,
-          "created": _created
-        },
-        {
-          "title": "Pay a visit to grandma",
-          "description": "Check on her since she's sick for very long time",
-          "isCompleted": false,
-          "created": _created
-        },
-        {
-          "title": "Apply for internships",
-          "description":
+          isCompleted: false,
+          created: _created),
+      Todo(
+          title: "Pay a visit to grandma",
+          description: "Check on her since she's sick for very long time",
+          isCompleted: false,
+          created: _created),
+      Todo(
+          title: "Apply for internships",
+          description:
               "Start looking for companies where I can apply since internships are soon",
-          "isCompleted": false,
-          "created": _created
-        },
-        {
-          "title": "Study today's lessons",
-          "description":
+          isCompleted: false,
+          created: _created),
+      Todo(
+          title: "Study today's lessons",
+          description:
               "Get prepared for tomorrow's CCTL by revising my courses",
-          "isCompleted": false,
-          "created": _created
-        },
-        {
-          "title": "Plan my holiday trip",
-          "description":
+          isCompleted: false,
+          created: _created),
+      Todo(
+          title: "Plan my holiday trip",
+          description:
               "- Choose a nice destination \n- Check for a good place to stay \n- Buy an airplane ticket",
-          "isCompleted": false,
-          "created": _created
-        },
-      ]);
-    });
-  }
+          isCompleted: false,
+          created: _created),
+    ];
 
-  Future<void> _loadTodos() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? todos = prefs.getString('todos');
-    final String? doneTodos = prefs.getString('doneTodos');
-    if (todos != null && doneTodos != null) {
-      setState(() {
-        _todoList.addAll(List<Map<String, dynamic>>.from(jsonDecode(todos)));
-        _doneTodoList
-            .addAll(List<Map<String, dynamic>>.from(jsonDecode(doneTodos)));
-      });
-    } else {
-      _init();
+    var existingTodos = await database.collection("Todos").get();
+
+    if (existingTodos.docs.isEmpty) {
+      for (var dumpTodo in dumpTodos) {
+        database.collection("Todos").add({
+          "title": dumpTodo.title,
+          "description": dumpTodo.description,
+          "isCompleted": false,
+          "created": dumpTodo.created,
+        });
+      }
     }
   }
 
-  Future<void> _saveTodos() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      prefs.setString("todos", jsonEncode(_todoList));
-      prefs.setString("doneTodos", jsonEncode(_doneTodoList));
+  Future<void> _loadTodos() async {
+    var todos = await database.collection("Todos").get();
+    _todoList.clear();
+    for (var doc in todos.docs) {
+      _todoList.add(Todo(
+          id: doc.id,
+          title: doc.data()["title"],
+          description: doc.data()["description"],
+          isCompleted: doc.data()["isCompleted"],
+          created: doc.data()["created"]));
+    }
+    setState(() {});
+  }
+
+  Future<void> _saveTodos(
+      String title, String? description, String? created) async {
+    database.collection("Todos").add({
+      "title": title,
+      "description": description ?? "",
+      "isCompleted": false,
+      "created": created ?? _created,
+    }).then((doc) {
+      _loadTodos();
     });
+  }
+
+  Future<void> _loadDoneTodos() async {
+    var doneTodos = await database.collection("DoneTodos").get();
+    _doneTodoList.clear();
+    for (var doc in doneTodos.docs) {
+      _doneTodoList.add(Todo(
+          id: doc.id,
+          title: doc.data()["title"],
+          description: doc.data()["description"],
+          isCompleted: doc.data()["isCompleted"],
+          created: doc.data()["created"]));
+    }
+    setState(() {});
+  }
+
+  Future<void> _saveDoneTodos(String title, String? description,
+      bool isCompleted, String? created) async {
+    database.collection("DoneTodos").add({
+      "title": title,
+      "description": description ?? "",
+      "isCompleted": isCompleted,
+      "created": created ?? _created,
+    }).then((doc) {
+      _loadDoneTodos();
+    });
+  }
+
+  Future<void> _deleteTodos(id) async {
+    await database.collection("Todos").doc(id).delete();
+    _loadTodos();
   }
 
   Future<void> _callToDoForm(BuildContext context) async {
@@ -106,15 +147,14 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (context) => const AddTodoForm()),
     );
-    setState(() {
-      _todoList.add({
-        "title": title,
-        "description": description ?? "",
-        "isCompleted": false,
-        "created": created ?? _created
+
+    if (title.toString().isNotEmpty &&
+        description.toString().isNotEmpty &&
+        created.toString().isNotEmpty) {
+      setState(() {
+        _saveTodos(title, description, created);
       });
-    });
-    _saveTodos();
+    }
   }
 
   @override
@@ -127,24 +167,14 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
               onPressed: () async {
-                final List<Map<String, dynamic>> todoList =
-                    await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => DoneTodo(
-                                  todoList: _todoList,
-                                  doneTodoList: _doneTodoList,
-                                )));
-                if (todoList.isNotEmpty) {
-                  setState(() {
-                    for (var todo in todoList) {
-                      if (!_todoList.contains(todo)) {
-                        _todoList.add(todo);
-                      }
-                    }
-                  });
-                }
-                _saveTodos();
+                await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => DoneTodo(
+                              todoList: _todoList,
+                              doneTodoList: _doneTodoList,
+                            )));
+                _loadTodos();
               },
               icon: const Icon(Icons.arrow_forward, size: 30.0))
         ],
@@ -156,22 +186,24 @@ class _HomePageState extends State<HomePage> {
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: CheckBox(
-                  title: _todoList[index]['title'],
-                  isChecked: _todoList[index]['isCompleted'],
-                  onChanged: (bool? value) {
+                  title: _todoList[index].title,
+                  isChecked: _todoList[index].isCompleted,
+                  onChanged: (bool? value) async {
                     setState(() {
-                      _todoList[index]['isCompleted'] = value!;
-                      if (_todoList[index]['isCompleted']) {
-                        _doneTodoList.add({
-                          "title": _todoList[index]['title'],
-                          "description": _todoList[index]['description'],
-                          "isCompleted": _todoList[index]['isCompleted'],
-                          "created": _todoList[index]['created']
-                        });
-                        _todoList.removeAt(index);
+                      _todoList[index].isCompleted = value!;
+
+                      if (_todoList[index].isCompleted) {
+                        _saveDoneTodos(
+                            _todoList[index].title,
+                            _todoList[index].description,
+                            _todoList[index].isCompleted,
+                            _todoList[index].created);
+
+                        _deleteTodos(_todoList[index].id);
                       }
                     });
-                    _saveTodos();
+
+                    _loadTodos();
                   },
                 ),
                 trailing: Wrap(
@@ -186,10 +218,9 @@ class _HomePageState extends State<HomePage> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => ViewTodo(
-                                    title: _todoList[index]['title'],
-                                    description: _todoList[index]
-                                        ['description'],
-                                    created: _todoList[index]['created'],
+                                    title: _todoList[index].title,
+                                    description: _todoList[index].description,
+                                    created: _todoList[index].created,
                                   )),
                         );
                       },
@@ -204,18 +235,22 @@ class _HomePageState extends State<HomePage> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => EditTodo(
-                                  title: _todoList[index]['title'],
-                                  description: _todoList[index]
-                                      ['description'])),
+                                  title: _todoList[index].title,
+                                  description: _todoList[index].description)),
                         );
-                        if (newTitle.toString().isNotEmpty) {
-                          setState(() {
-                            _todoList.elementAt(index)['title'] = newTitle;
-                            _todoList.elementAt(index)['description'] =
-                                newDescription;
+
+                        if (newTitle.toString().isNotEmpty &&
+                            newDescription.toString().isNotEmpty) {
+                          await database
+                              .collection("Todos")
+                              .doc(_todoList[index].id)
+                              .update({
+                            "title": newTitle,
+                            "description": newDescription
                           });
                         }
-                        _saveTodos();
+
+                        _loadTodos();
                       },
                     ),
                     IconButton(
@@ -223,11 +258,8 @@ class _HomePageState extends State<HomePage> {
                         Icons.delete_outlined,
                         size: 22,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _todoList.removeAt(index);
-                        });
-                        _saveTodos();
+                      onPressed: () async {
+                        _deleteTodos(_todoList[index].id);
                       },
                     ),
                   ],

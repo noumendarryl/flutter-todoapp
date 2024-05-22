@@ -1,29 +1,63 @@
-import 'dart:convert';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_list/views/view_todo.dart';
 
+import '../todo.dart';
 import '../widgets/checkbox.dart';
 
 class DoneTodo extends StatefulWidget {
-  final List<Map<String, dynamic>> todoList;
-  final List<Map<String, dynamic>> doneTodoList;
+  final List<Todo> todoList;
+  final List<Todo> doneTodoList;
 
-  const DoneTodo({super.key, required this.todoList, required this.doneTodoList});
+  const DoneTodo(
+      {super.key, required this.todoList, required this.doneTodoList});
 
   @override
   State<DoneTodo> createState() => _DoneTodoState();
 }
 
 class _DoneTodoState extends State<DoneTodo> {
-  Future<void> _saveDoneTodos() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      prefs.setString("doneTodos", jsonEncode(widget.doneTodoList));
-    });
+  final FirebaseFirestore database = FirebaseFirestore.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDoneTodos();
   }
-  
+
+  Future<void> _loadTodos() async {
+    var todos = await database.collection("Todos").get();
+    widget.todoList.clear();
+    for (var doc in todos.docs) {
+      widget.todoList.add(Todo(
+          id: doc.id,
+          title: doc.data()["title"],
+          description: doc.data()["description"],
+          isCompleted: doc.data()["isCompleted"],
+          created: doc.data()["created"]));
+    }
+    setState(() {});
+  }
+
+  Future<void> _loadDoneTodos() async {
+    var doneTodos = await database.collection("DoneTodos").get();
+    widget.doneTodoList.clear();
+    for (var doc in doneTodos.docs) {
+      widget.doneTodoList.add(Todo(
+          id: doc.id,
+          title: doc.data()["title"],
+          description: doc.data()["description"],
+          isCompleted: doc.data()["isCompleted"],
+          created: doc.data()["created"]));
+    }
+    setState(() {});
+  }
+
+  Future<void> _deleteDoneTodos(id) async {
+    await database.collection("DoneTodos").doc(id).delete();
+    _loadDoneTodos();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,8 +68,7 @@ class _DoneTodoState extends State<DoneTodo> {
           },
           icon: const Icon(Icons.arrow_back),
         ),
-        title: const Text("Done todos",
-            style: TextStyle(fontSize: 20.0)),
+        title: const Text("Done todos", style: TextStyle(fontSize: 20.0)),
         backgroundColor: const Color.fromRGBO(192, 192, 192, .5),
       ),
       body: Container(
@@ -45,23 +78,26 @@ class _DoneTodoState extends State<DoneTodo> {
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: CheckBox(
-                  title: widget.doneTodoList[index]['title'],
-                  isChecked: widget.doneTodoList[index]['isCompleted'],
-                  onChanged: (bool? value) {
+                  title: widget.doneTodoList[index].title,
+                  isChecked: widget.doneTodoList[index].isCompleted,
+                  onChanged: (bool? value) async {
                     setState(() {
-                      widget.doneTodoList[index]['isCompleted'] = value!;
-                      if (!widget.doneTodoList[index]['isCompleted']) {
-                        widget.todoList.add({
-                          "title": widget.doneTodoList[index]['title'],
-                          "description": widget.doneTodoList[index]
-                          ['description'],
-                          "isCompleted": widget.doneTodoList[index]['isCompleted'],
-                          "created": widget.doneTodoList[index]['created'],
+                      widget.doneTodoList[index].isCompleted = value!;
+                      if (!widget.doneTodoList[index].isCompleted) {
+                        database.collection("Todos").add({
+                          "title": widget.doneTodoList[index].title,
+                          "description":
+                              widget.doneTodoList[index].description ?? "",
+                          "isCompleted": widget.doneTodoList[index].isCompleted,
+                          "created": widget.doneTodoList[index].created,
+                        }).then((doc) {
+                          _loadTodos();
                         });
-                        widget.doneTodoList.removeAt(index);
+
+                        _deleteDoneTodos(widget.doneTodoList[index].id);
                       }
                     });
-                    _saveDoneTodos();
+                    _loadDoneTodos();
                   },
                 ),
                 trailing: Wrap(
@@ -76,11 +112,11 @@ class _DoneTodoState extends State<DoneTodo> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => ViewTodo(
-                                title: widget.doneTodoList[index]['title'],
-                                description: widget.doneTodoList[index]
-                                ['description'],
-                                created: widget.doneTodoList[index]['created'],
-                              )),
+                                    title: widget.doneTodoList[index].title,
+                                    description:
+                                        widget.doneTodoList[index].description,
+                                    created: widget.doneTodoList[index].created,
+                                  )),
                         );
                       },
                     ),
@@ -90,10 +126,7 @@ class _DoneTodoState extends State<DoneTodo> {
                         size: 22,
                       ),
                       onPressed: () {
-                        setState(() {
-                          widget.doneTodoList.removeAt(index);
-                        });
-                        _saveDoneTodos();
+                        _deleteDoneTodos(widget.doneTodoList[index].id);
                       },
                     ),
                   ],
