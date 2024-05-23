@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:todo_list/views/view_todo.dart';
 
+import '../auth/login.dart';
 import '../todo.dart';
 import '../widgets/checkbox.dart';
 
@@ -11,7 +13,9 @@ import 'done_todo.dart';
 import 'edit_todo.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final String? username;
+
+  const HomePage({super.key, this.username});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -19,6 +23,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final FirebaseFirestore database = FirebaseFirestore.instance;
+  final FirebaseAuth _authInstance = FirebaseAuth.instance;
 
   final List<Todo> _todoList = [];
   final List<Todo> _doneTodoList = [];
@@ -157,26 +162,49 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _logout() async {
+    try {
+      await _authInstance.signOut();
+      // Handle successful logout, e.g., navigate to the login screen
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const Login()),
+      );
+    } catch (error) {
+      // Handle any errors that occur during logout
+      print('Error signing out: $error');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Welcome 👋 to your todo app",
+        title: Text("Welcome 👋 ${widget.username} to your todo app",
             style: TextStyle(fontSize: 20.0)),
         backgroundColor: const Color.fromRGBO(192, 192, 192, .5),
         actions: [
-          IconButton(
-              onPressed: () async {
-                await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => DoneTodo(
-                              todoList: _todoList,
-                              doneTodoList: _doneTodoList,
-                            )));
-                _loadTodos();
-              },
-              icon: const Icon(Icons.arrow_forward, size: 30.0))
+          Wrap(
+            children: [
+              IconButton(
+                  onPressed: () async {
+                    await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => DoneTodo(
+                                  todoList: _todoList,
+                                  doneTodoList: _doneTodoList,
+                                )));
+                    _loadTodos();
+                  },
+                  icon: const Icon(Icons.check_box_outlined)),
+              IconButton(
+                  onPressed: () async {
+                    _logout();
+                  },
+                  icon: const Icon(Icons.logout_outlined)),
+            ],
+          )
         ],
       ),
       body: Container(
