@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:todo_list/views/view_todo.dart';
 
@@ -18,6 +19,7 @@ class DoneTodo extends StatefulWidget {
 
 class _DoneTodoState extends State<DoneTodo> {
   final FirebaseFirestore database = FirebaseFirestore.instance;
+  final FirebaseAuth _authInstance = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -26,11 +28,12 @@ class _DoneTodoState extends State<DoneTodo> {
   }
 
   Future<void> _loadTodos() async {
-    var todos = await database.collection("Todos").get();
+    var todos = await database.collection("Todos").where('uid', isEqualTo: _authInstance.currentUser!.uid).get();
     widget.todoList.clear();
     for (var doc in todos.docs) {
       widget.todoList.add(Todo(
           id: doc.id,
+          uid: doc.data()["uid"],
           title: doc.data()["title"],
           description: doc.data()["description"],
           isCompleted: doc.data()["isCompleted"],
@@ -40,11 +43,12 @@ class _DoneTodoState extends State<DoneTodo> {
   }
 
   Future<void> _loadDoneTodos() async {
-    var doneTodos = await database.collection("DoneTodos").get();
+    var doneTodos = await database.collection("DoneTodos").where('uid', isEqualTo: _authInstance.currentUser!.uid).get();
     widget.doneTodoList.clear();
     for (var doc in doneTodos.docs) {
       widget.doneTodoList.add(Todo(
           id: doc.id,
+          uid: doc.data()["uid"],
           title: doc.data()["title"],
           description: doc.data()["description"],
           isCompleted: doc.data()["isCompleted"],

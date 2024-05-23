@@ -4,9 +4,7 @@ import 'package:todo_list/auth/register.dart';
 import 'package:todo_list/views/home_page.dart';
 
 class Login extends StatefulWidget {
-  final String? username;
-  
-  const Login({super.key, this.username});
+  const Login({super.key});
 
   @override
   State<Login> createState() => _LoginState();
@@ -29,7 +27,7 @@ class _LoginState extends State<Login> {
           .user;
       if (user != null) {
         Navigator.of(context)
-            .push(MaterialPageRoute(builder: (context) => HomePage(username: widget.username ?? "",)));
+            .push(MaterialPageRoute(builder: (context) => const HomePage()));
         _formKey.currentState!.reset();
       }
     } catch (error) {

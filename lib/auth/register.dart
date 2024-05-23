@@ -14,8 +14,6 @@ class _RegisterState extends State<Register> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final FirebaseAuth _authInstance = FirebaseAuth.instance;
 
-  String? _username = '';
-
   String _email = '';
 
   String _password = '';
@@ -29,7 +27,7 @@ class _RegisterState extends State<Register> {
           .user;
       if (user != null) {
         Navigator.of(context).pushReplacement(MaterialPageRoute(
-            builder: ((context) => Login(username: _username ?? ""))));
+            builder: ((context) => const Login())));
         _formKey.currentState!.reset();
       }
     } catch (error) {
@@ -57,23 +55,6 @@ class _RegisterState extends State<Register> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        hintText: "Enter your username",
-                      ),
-                      validator: (String? value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter an username';
-                        }
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _username = value!;
-                      },
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 15.0),
-                    ),
                     TextFormField(
                       decoration: const InputDecoration(
                         hintText: "Enter your email address",

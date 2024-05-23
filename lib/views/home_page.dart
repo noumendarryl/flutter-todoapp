@@ -13,9 +13,7 @@ import 'done_todo.dart';
 import 'edit_todo.dart';
 
 class HomePage extends StatefulWidget {
-  final String? username;
-
-  const HomePage({super.key, this.username});
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -41,34 +39,40 @@ class _HomePageState extends State<HomePage> {
   void _init() async {
     final dumpTodos = [
       Todo(
+          uid: _authInstance.currentUser!.uid,
           title: "Go to the market",
           description: "Refill my fridge with new groceries",
           isCompleted: false,
           created: _created),
       Todo(
+          uid: _authInstance.currentUser!.uid,
           title: "Buy some groceries",
           description:
               "- Fruits \n- Vegetables \n- Irish Potatoes \n- Tomatoes",
           isCompleted: false,
           created: _created),
       Todo(
+          uid: _authInstance.currentUser!.uid,
           title: "Pay a visit to grandma",
           description: "Check on her since she's sick for very long time",
           isCompleted: false,
           created: _created),
       Todo(
+          uid: _authInstance.currentUser!.uid,
           title: "Apply for internships",
           description:
               "Start looking for companies where I can apply since internships are soon",
           isCompleted: false,
           created: _created),
       Todo(
+          uid: _authInstance.currentUser!.uid,
           title: "Study today's lessons",
           description:
               "Get prepared for tomorrow's CCTL by revising my courses",
           isCompleted: false,
           created: _created),
       Todo(
+          uid: _authInstance.currentUser!.uid,
           title: "Plan my holiday trip",
           description:
               "- Choose a nice destination \n- Check for a good place to stay \n- Buy an airplane ticket",
@@ -76,11 +80,15 @@ class _HomePageState extends State<HomePage> {
           created: _created),
     ];
 
-    var existingTodos = await database.collection("Todos").get();
+    var existingTodos = await database
+        .collection("Todos")
+        .where('uid', isEqualTo: _authInstance.currentUser!.uid)
+        .get();
 
     if (existingTodos.docs.isEmpty) {
       for (var dumpTodo in dumpTodos) {
         database.collection("Todos").add({
+          "uid": dumpTodo.uid,
           "title": dumpTodo.title,
           "description": dumpTodo.description,
           "isCompleted": false,
@@ -91,11 +99,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadTodos() async {
-    var todos = await database.collection("Todos").get();
+    var todos = await database
+        .collection("Todos")
+        .where('uid', isEqualTo: _authInstance.currentUser!.uid)
+        .get();
     _todoList.clear();
     for (var doc in todos.docs) {
       _todoList.add(Todo(
           id: doc.id,
+          uid: doc.data()["uid"],
           title: doc.data()["title"],
           description: doc.data()["description"],
           isCompleted: doc.data()["isCompleted"],
@@ -107,6 +119,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _saveTodos(
       String title, String? description, String? created) async {
     database.collection("Todos").add({
+      "uid": _authInstance.currentUser!.uid,
       "title": title,
       "description": description ?? "",
       "isCompleted": false,
@@ -117,11 +130,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadDoneTodos() async {
-    var doneTodos = await database.collection("DoneTodos").get();
+    var doneTodos = await database
+        .collection("DoneTodos")
+        .where('uid', isEqualTo: _authInstance.currentUser!.uid)
+        .get();
     _doneTodoList.clear();
     for (var doc in doneTodos.docs) {
       _doneTodoList.add(Todo(
           id: doc.id,
+          uid: doc.data()["uid"],
           title: doc.data()["title"],
           description: doc.data()["description"],
           isCompleted: doc.data()["isCompleted"],
@@ -133,6 +150,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _saveDoneTodos(String title, String? description,
       bool isCompleted, String? created) async {
     database.collection("DoneTodos").add({
+      "uid": _authInstance.currentUser!.uid,
       "title": title,
       "description": description ?? "",
       "isCompleted": isCompleted,
@@ -163,24 +181,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _logout() async {
-    try {
-      await _authInstance.signOut();
-      // Handle successful logout, e.g., navigate to the login screen
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const Login()),
-      );
-    } catch (error) {
-      // Handle any errors that occur during logout
-      print('Error signing out: $error');
-    }
+    await _authInstance.signOut();
+    // Handle successful logout, e.g., navigate to the login screen
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const Login()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Welcome 👋 ${widget.username} to your todo app",
+        title: const Text("Welcome 👋 to your todo app",
             style: TextStyle(fontSize: 20.0)),
         backgroundColor: const Color.fromRGBO(192, 192, 192, .5),
         actions: [
