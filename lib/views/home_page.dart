@@ -33,7 +33,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _init();
-    _loadTodos();
   }
 
   void _init() async {
@@ -96,6 +95,8 @@ class _HomePageState extends State<HomePage> {
         });
       }
     }
+
+    _loadTodos();
   }
 
   Future<void> _loadTodos() async {

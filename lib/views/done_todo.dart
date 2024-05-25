@@ -89,6 +89,7 @@ class _DoneTodoState extends State<DoneTodo> {
                       widget.doneTodoList[index].isCompleted = value!;
                       if (!widget.doneTodoList[index].isCompleted) {
                         database.collection("Todos").add({
+                          "uid": widget.doneTodoList[index].uid,
                           "title": widget.doneTodoList[index].title,
                           "description":
                               widget.doneTodoList[index].description ?? "",
